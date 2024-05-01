@@ -2,6 +2,8 @@
 
 var express = require('express');
 var mongoose = require('mongoose');
+const viem = require('viem');
+const llgAbi = require('../libs/smart-contracts/abis/LLG.json');
 var router = express.Router();
 
 /* display game. */
@@ -33,6 +35,23 @@ router.get('/user/:name', function(req, res) {
         }
     });
 });
+
+/* LucidLandsGem */
+router.get('/llg', async (req, res) => {
+  const llg = viem.getContract({
+    address: req.app.blockchain.contractData.llg.address,
+    abi: llgAbi,
+    client: { public: req.app.blockchain.provider, wallet: req.app.blockchain.signer },
+  });
+
+  let name;
+  try {
+    name = await llg.read.name();
+  } catch(error) {
+    return res.status(400).send({ success: false, error: { message: error.message }});
+  }
+  return res.status(200).send({ success: true, data: { name } });
+})
 
 router.post('/rankAll', async (req, res) => {
     var RankModel = mongoose.model('Rank');

@@ -9,6 +9,9 @@ var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 var passport = require('passport');
 var flash = require('connect-flash');
+const viem = require('viem');
+const viemChains = require('viem/chains');
+const viemAccounts = require('viem/accounts');
 require('dotenv').config()
 
 var env = process.env.NODE_ENV || 'default';
@@ -23,6 +26,26 @@ require('./config/database')(app, mongoose);
 fs.readdirSync(__dirname + '/models').forEach(function (file) {
     if (~file.indexOf('.js')) require(__dirname + '/models/' + file);
 });
+
+// Configure blockchain
+// provider
+const provider = viem.createPublicClient({
+  chain: viemChains.bsc,
+  transport: viem.http(),
+});
+// signer
+const signer = viem.createWalletClient({
+  account: viemAccounts.privateKeyToAccount(process.env.PRIVATE_KEY),
+  chain: viemChains.bsc,
+  transport: viem.http(),
+});
+// contracts
+const contractData = {
+    llg: {
+        address: `${process.env.LLG_CONTRACT_ADDRESS}`
+    }
+};
+app.blockchain = {provider, signer, contractData};
 
 // cors middleware
 app.use(function(req, res, next) {
